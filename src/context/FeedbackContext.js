@@ -1,28 +1,51 @@
-import { createContext, useState } from 'react'
-import { v4 as uuidv4 } from 'uuid'
-import FeedbackData from '../data/FeedbackData'
+import { createContext, useState, useEffect } from 'react'
 
 const FeedbackContext = createContext()
 
 export const FeedbackProvider = ({ children }) => {
-  const [feedback, setFeedback] = useState(FeedbackData)
+  const [isLoading, setIsLoding] = useState(true)
+
+  const [feedback, setFeedback] = useState([])
 
   const [feedbackEdit, SetFeedbackEdit] = useState({
     item: {},
     edit: false,
   })
 
+  useEffect(() => {
+    fetchFeedback()
+  }, [])
+
+  // fetch feedback
+  const fetchFeedback = async () => {
+    const response = await fetch('/feedback?_sort=id&_order=desc')
+    const data = await response.json()
+    setFeedback(data)
+    setIsLoding(false)
+  }
+
   // delete feedback
-  const deleteFeedback = (id) => {
+  const deleteFeedback = async (id) => {
     if (window.confirm('Are you sure?')) {
       setFeedback(feedback.filter((item) => item.id !== id))
     }
+    await fetch(`/feedback/${id}`, {
+      method: 'DELETE',
+    })
   }
 
   // add feedback
-  const addFeedback = (newFeedback) => {
-    newFeedback.id = uuidv4()
-    setFeedback([newFeedback, ...feedback])
+  const addFeedback = async (newFeedback) => {
+    const response = await fetch('/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newFeedback),
+    })
+
+    const data = await response.json()
+    setFeedback([data, ...feedback])
   }
 
   //set item to be updated
@@ -33,10 +56,21 @@ export const FeedbackProvider = ({ children }) => {
     })
   }
   // update feedback item
-  const updateFeedback = (id, updItem) => {
+  const updateFeedback = async (id, updItem) => {
+    const response = await fetch(`/feedback/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updItem),
+    })
+
+    const data = await response.json()
+
     setFeedback(
-      feedback.map((item) => (item.id === id ? { ...item, ...updItem } : item))
+      feedback.map((item) => (item.id === id ? { ...item, ...data } : item))
     )
+
     SetFeedbackEdit({
       item: {},
       edit: false,
@@ -47,6 +81,7 @@ export const FeedbackProvider = ({ children }) => {
       value={{
         feedback,
         feedbackEdit,
+        isLoading,
         deleteFeedback,
         addFeedback,
         editFeedback,

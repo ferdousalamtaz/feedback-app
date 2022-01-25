@@ -19,7 +19,6 @@ function FeedbackForm() {
       setText(feedbackEdit.item.text)
       setRating(feedbackEdit.item.rating)
     }
-    console.log('item')
   }, [feedbackEdit])
 
   const handleTextChange = (e) => {
